@@ -1,0 +1,17 @@
+[package]
+name = "tokio_loop"
+version = "0.1.0"
+authors = ["Kontio Pyry <kontio@r.recruit.co.jp>"]
+
+[dependencies]
+
+tokio-core = "*"
+tokio-io = "*"
+futures = "*"
+log = "*"
+env_logger = "*"
+bytes = "*"
+regex = "*"
+
+[replace]
+"futures:0.1.13" = { path = "futures-rs" }
