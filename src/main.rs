@@ -22,8 +22,13 @@ use std::marker::PhantomData;
 use regex::bytes::Regex;
 
 
-const HOST: &str = "localhost";
-const HTTP_BODY: &[u8] = b"GET / HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n";
+const PORT: u16 = 80;
+const HOST: &str = "ec2-52-199-164-246.ap-northeast-1.compute.amazonaws.com";
+const HTTP_BODY: &[u8] = b"GET / HTTP/1.1\r\nHost: ec2-52-199-164-246.ap-northeast-1.compute.amazonaws.com\r\nConnection: keep-alive\r\n\r\n";
+
+//const PORT: u16 = 8080;
+//const HOST: &str = "127.0.0.1";
+//const HTTP_BODY: &[u8] = b"GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: keep-alive\r\n\r\n";
 
 
 struct SingleHostConnector {
@@ -80,7 +85,7 @@ impl Stream for ReqStream {
         }
         self.waiting_unpark = None;
 
-        if self.streak > 2 {
+        if self.streak > 10 {
             debug!("Parking the request stream!");
             let (tx, rx) = oneshot::channel();
             self.waiting_unpark = Some(rx);
@@ -172,7 +177,7 @@ fn main() {
     let mut core = Core::new().unwrap();
     let handle = core.handle();
 
-    let addr = (HOST, 80)
+    let addr = (HOST, PORT)
         .to_socket_addrs()
         .unwrap()
         .next()
@@ -196,6 +201,9 @@ fn main() {
         .map(|conn_futures| {
             conn_futures
                 .and_then(|stream| {
+                    println!("Stream: {:?}", stream.nodelay());
+                    stream.set_nodelay(true).unwrap();
+                    println!("Stream: {:?}", stream.nodelay());
                     let (writer_sink, reader_stream) = stream.framed(HttpCodec::new()).split();
                     let write_future = writer_sink
                         .send_all(ReqStream::new(tx.clone()))
